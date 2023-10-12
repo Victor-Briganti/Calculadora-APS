@@ -11,6 +11,8 @@
 //*********************************** HELPERS ********************************//
 
 void Cpu::result() {
+  if (displ == nullptr)
+    return;
   if (errorFlag) {
     displ->error();
     return;
@@ -37,7 +39,8 @@ void Cpu::result() {
 void Cpu::error() {
   reg1.clear();
   reg2.clear();
-  displ->error();
+  if (displ != nullptr)
+    displ->error();
 }
 
 double Cpu::reg1_to_double() {
@@ -56,7 +59,8 @@ double Cpu::reg2_to_double() {
 void Cpu::add() {
   auto result = reg2_to_double() + reg1_to_double();
   if (result < 0) {
-    displ->set_negative();
+    if (displ != nullptr)
+      displ->set_negative();
     reg1Sign = NEGATIVE;
     result *= -1;
   }
@@ -66,7 +70,8 @@ void Cpu::add() {
 void Cpu::sub() {
   auto result = reg2_to_double() - reg1_to_double();
   if (result < 0) {
-    displ->set_negative();
+    if (displ != nullptr)
+      displ->set_negative();
     reg1Sign = NEGATIVE;
     result *= -1;
   }
@@ -81,7 +86,8 @@ void Cpu::div() {
   }
   auto result = reg2_to_double() / reg1_double;
   if (result < 0) {
-    displ->set_negative();
+    if (displ != nullptr)
+      displ->set_negative();
     reg1Sign = NEGATIVE;
     result *= -1;
   }
@@ -91,7 +97,8 @@ void Cpu::div() {
 void Cpu::mult() {
   auto result = reg2_to_double() * reg1_to_double();
   if (result < 0) {
-    displ->set_negative();
+    if (displ != nullptr)
+      displ->set_negative();
     reg1Sign = NEGATIVE;
     result *= -1;
   }
@@ -110,7 +117,8 @@ void Cpu::sqrt() {
 void Cpu::percen() {
   auto result = reg1_to_double() / 100;
   if (result < 0) {
-    displ->set_negative();
+    if (displ != nullptr)
+      displ->set_negative();
     reg1Sign = NEGATIVE;
     result *= -1;
   }
@@ -137,7 +145,8 @@ void Cpu::decimal_separator() { displ->decimal_separator(); }
 void Cpu::clear() {
   reg1 = "0";
   reg2 = "0";
-  displ->clear();
+  if (displ != nullptr)
+    displ->clear();
 }
 
 void Cpu::equal() {
@@ -179,14 +188,16 @@ Cpu::~Cpu() { delete displ; }
 
 void Cpu::set_display(Display *ds) { displ = ds; }
 
-void Cpu::send_digit(Digit dg) {
+void Cpu::receive_digit(Digit dg) {
   char c = digit_to_char(dg);
   reg1.push_back(c);
-  displ->add(c);
-  displ->print();
+  if (displ != nullptr) {
+    displ->add(c);
+    displ->print();
+  }
 }
 
-void Cpu::send_control(Control ctrl) {
+void Cpu::receive_control(Control ctrl) {
   switch (ctrl) {
   case CLEAR_ERROR:
     clear();
@@ -214,10 +225,11 @@ void Cpu::send_control(Control ctrl) {
   }
 }
 
-void Cpu::send_operator(Operator op) {
+void Cpu::receive_operator(Operator op) {
   if (reg1.empty() && reg2.empty()) {
     if (op == SUBTRACTION) {
-      displ->set_negative();
+      if (displ != nullptr)
+        displ->set_negative();
       reg1Sign = NEGATIVE;
     } else
       error();
@@ -233,7 +245,8 @@ void Cpu::send_operator(Operator op) {
       reg2Sign = reg1Sign;
       reg1Sign = POSITIVE;
       reg1.clear();
-      displ->clear_buffer();
+      if (displ != nullptr)
+        displ->clear_buffer();
       break;
     default:
       break;
@@ -241,3 +254,5 @@ void Cpu::send_operator(Operator op) {
   }
   currentOp = op;
 }
+
+void Cpu::receive_error() { error(); }

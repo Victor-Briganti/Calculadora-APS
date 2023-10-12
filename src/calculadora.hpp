@@ -1,3 +1,6 @@
+#ifndef __CALCULADORA_HPP__
+#define __CALCULADORA_HPP__
+
 #include <string>
 
 enum Digit {
@@ -26,8 +29,12 @@ enum Operator {
   SQUARE_ROOT = 15
 };
 
+// Helpers para enum Operator
+Operator str_to_op(std::string str);
+std::string op_to_str(Operator op);
+
 enum Control {
-  // ON = 16, // O que isso deveria fazer?
+  ON = 16, // O que isso deveria fazer?
   OFF = 17,
   CLEAR_ERROR = 18,
   // TODO: Isso não deveria ser dividido?
@@ -40,6 +47,10 @@ enum Control {
   DECIMAL_SEPARATOR = 24
 };
 
+// Helpers para enum Control
+Control str_to_ctrl(std::string ctrl);
+std::string ctrl_to_str(Control ctrl);
+
 class Display {
 private:
   char buffer[8];
@@ -49,6 +60,7 @@ private:
   int memFlag;
   int clearedFlag;
   void flush();
+
 public:
   Display();
   void set_negative();
@@ -62,54 +74,113 @@ public:
 };
 
 class Cpu {
-  private:
-    Display* displ;
+private:
+  Display *displ;
 
-    enum Sign{
-      POSITIVE,
-      NEGATIVE
-    };
-  
-    std::string reg1;
-    Sign reg1Sign;
-    std::string reg2;
-    Sign reg2Sign;
-    std::string mem;
-    Operator currentOp;
-    bool errorFlag;
+  enum Sign { POSITIVE, NEGATIVE };
 
-    // Helpers
-    Digit to_char(char c);
-    void result();
-    void error();
-    double reg1_to_double();
-    double reg2_to_double();
+  std::string reg1;
+  Sign reg1Sign;
+  std::string reg2;
+  Sign reg2Sign;
+  std::string mem;
+  Operator currentOp;
+  bool errorFlag;
 
-    // OPERATOR
-    void add();
-    void sub();
-    void div();
-    void mult();
-    void sqrt();
-    void percen();
+  // Helpers
+  Digit to_char(char c);
+  void result();
+  void error();
+  double reg1_to_double();
+  double reg2_to_double();
 
-    // CONTROL
-    // Memory
-    void mem_sum();
-    void mem_sub();
-    void mem_read();
-    void mem_clear();
-    // Others
-    void decimal_separator();
-    void clear();
-    void off() { exit(0); }
-    void equal();
+  // OPERATOR
+  void add();
+  void sub();
+  void div();
+  void mult();
+  void sqrt();
+  void percen();
 
-  public:
-    Cpu();
-    ~Cpu();
-    void send_digit(Digit dg);
-    void send_control(Control ctrl);
-    void send_operator(Operator op);
-    void set_display(Display *ds);
+  // CONTROL
+  // Memory
+  void mem_sum();
+  void mem_sub();
+  void mem_read();
+  void mem_clear();
+  // Others
+  void decimal_separator();
+  void clear();
+  void off() { exit(0); }
+  void equal();
+
+public:
+  Cpu();
+  ~Cpu();
+  void set_display(Display *ds);
+  void receive_digit(Digit dg);
+  void receive_control(Control ctrl);
+  void receive_operator(Operator op);
+  void receive_error();
 };
+
+class Key;
+
+class Keyboard {
+private:
+  Cpu *cpu;
+  Key* keyArray[24]; 
+
+public:
+  Keyboard();
+  ~Keyboard();
+  void set_cpu(Cpu *cp);
+  void receive_digit(Digit dg);
+  void receive_control(Control ctrl);
+  void receive_operator(Operator op);
+  void receive_error();
+};
+
+class Key {
+protected:
+  Keyboard *keybrd;
+
+public:
+  virtual ~Key();
+  virtual void press(std::string str);
+  void set_keyboard(Keyboard *kbrd);
+};
+
+class KeyDigit : public Key {
+private:
+  std::string symbol;
+  Digit dg;
+
+public:
+  KeyDigit(std::string symbol, Digit dg) : symbol(std::move(symbol)), dg(dg) {}
+  void press(std::string str);
+};
+
+class KeyOperator : public Key {
+private:
+  std::string symbol;
+  Operator op;
+
+public:
+  KeyOperator(std::string symbol, Operator op)
+      : symbol(std::move(symbol)), op(op) {}
+  void press(std::string str);
+};
+
+class KeyControl : public Key {
+private:
+  std::string symbol;
+  Control ctrl;
+
+public:
+  KeyControl(std::string symbol, Control ctrl)
+      : symbol(std::move(symbol)), ctrl(ctrl) {}
+  void press(std::string str);
+};
+
+#endif // __CALCULADORA_HPP__
